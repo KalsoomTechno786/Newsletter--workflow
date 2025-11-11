@@ -1,0 +1,426 @@
+{
+  "name": "Newsletter  workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "query": "AI  adoption for small business",
+        "options": {
+          "topic": "news",
+          "max_results": 3,
+          "time_range": "week",
+          "include_raw_content": false
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        2976,
+        416
+      ],
+      "id": "39481fae-9241-4d33-9a21-d7597f2f6365",
+      "name": "AI news researcher",
+      "credentials": {
+        "tavilyApi": {
+          "id": "3tR1m7fkLNVhUWzW",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3216,
+        640
+      ],
+      "id": "06d4e781-7e5e-49c6-9c18-ca75c01a0518",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6tt2Ll8Fpd4j0QzK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n   \"properties\": {\n    \"title\": { \"type\": \"string\", \"minLength\": 10 },\n    \"topics\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 3,\n      \"items\": { \"type\": \"string\", \"minLength\": 3, \"maxLength\": 50 }\n    }\n  },\n  \"required\": [\"title\", \"topics\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3344,
+        640
+      ],
+      "id": "0f4ca3bc-8899-4084-b29e-50e92b95e64d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.results.map(item => JSON.stringify(item, null, 2)).join(\"\\n\\n\") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert newsletter planner. You receive 3–5 short article digests (title, URL, published date, content) from the past week.\n\nTask: \npropose a catchy edition title (≤ 80 chars) and exactly 3 concise topics (each 3–5 words) that reflect distinct angles for our audience of small-business leaders.\n\nConstraints: unique topics; no duplicates; no clickbait; be informative.\nOutput only via the required schema (no extra text)."
+        }
+      },
+      "id": "14b6f874-7af0-4b0b-aa92-f0bc92456972",
+      "name": "planning agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        3200,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        416
+      ],
+      "id": "5dbfeb93-f148-42c1-982e-b56d5cfb807d",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "query": "=[\n  {\n    \"output\": \"Strategic Insights: PBMs, AI Policy, and Health Tech Adoption\"\n  },\n  {\n    \"0\": \"PBM Model Evolution\",\n    \"1\": \"Fostering AI Innovation\",\n    \"2\": \"Navigating AI Integration\"\n  }\n]",
+        "options": {
+          "search_depth": "basic",
+          "time_range": "month",
+          "include_raw_content": true
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        3776,
+        416
+      ],
+      "id": "722d22ea-acbc-4002-a962-f67bea9f5012",
+      "name": "Topic researcher",
+      "credentials": {
+        "tavilyApi": {
+          "id": "3tR1m7fkLNVhUWzW",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        416
+      ],
+      "id": "4f5ddb63-a986-4942-8ca9-f8fa8eaaf5da",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        640
+      ],
+      "id": "d72d3445-572c-4a94-9185-97a99a7bbc8d",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6tt2Ll8Fpd4j0QzK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"the email subject\"\n    },\n    \"content\": {\n      \"type\": \"string\",\n      \"description\": \"the newsletter content\"\n    }\n  },\n  \"required\": [\"subject\", \"content\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4720,
+        640
+      ],
+      "id": "81c9d70a-fbef-4481-9329-4c5d38db8eca",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        2752,
+        416
+      ],
+      "id": "67b08748-06b6-48bb-a0e8-968008d13fed",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Title: {{ $('planning agent').item.json.output.title }}\n\nSections: \n{{ $json.output.join(\"\\n\\n\\n\\n\") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are the newsletter editor and layout stylist.\n\n**Input:** one title candidate and 3 Markdown sections with [n] footnotes.\n\n**Output:**\n1. **subject** — an email subject (≤ 80 chars, no emojis).\n2. **content** — a VALID, responsive HTML **body only** (no `<!DOCTYPE>`, `<html>`, or `<head>`).\n\n**HTML Requirements:**\n* Structure: include a header with the title + current date {{ $now.format(\"DDD\") }}, a short intro paragraph, the 3 sections (convert Markdown to HTML), a “Key Sources” section that deduplicates and numbers links, and a short friendly sign-off.\n* Typography: use `<h1>/<h2>`, `<p>`, `<ul>/<ol>`, `<a>`. Apply inline CSS for readability (max-width container, readable font size and line-height).\n* Links: anchors must include `rel=\"noopener noreferrer\"` and `target=\"_blank\"`.\n* Accessibility: semantic headings; include `alt` text if images appear (don’t invent images).\n* Restrictions: no external CSS/JS, no tracking pixels."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        4576,
+        416
+      ],
+      "id": "ad15c0b6-3938-42ea-9ab6-617d41bb9218",
+      "name": "Editor",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4080,
+        640
+      ],
+      "id": "208b6dbc-199f-472a-b737-e0f987a0f5e9",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6tt2Ll8Fpd4j0QzK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic:{{ $json.query }}\n\n{{ $json.results.map(item => JSON.stringify(item,null,2)).join(\"\\n\\n\") }}",
+        "options": {
+          "systemMessage": "=\nYou are a professional newsletter section writer. Write ONE self-contained section (350–500 words) for small-business leaders.\n\nRequirements:\n- Start with an H2 heading matching the Topic (e.g., “## <topic>”).\n- Synthesize facts from the provided sources (don’t invent).\n- Inline-cite claims with superscript markers like [1], [2].\n- After the prose, add a short “Sources” list: [n] Title — Domain (linked).\n- Tone: clear, expert, engaging. No overall intro or conclusion; just this section.\n- Output plain Markdown (the editor will convert to HTML)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        4000,
+        416
+      ],
+      "id": "2a1f9e45-8a1d-4fbe-a428-5c7f6537e60c",
+      "name": "Section writer"
+    },
+    {
+      "parameters": {
+        "sendTo": "zahrafreelancer786@gmail.com",
+        "subject": "={{ $json.output.subject }}",
+        "message": "={{ $json.output.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4928,
+        416
+      ],
+      "id": "101aebd3-9acc-43a1-8a5a-dd56e18c0352",
+      "name": "Send a message",
+      "webhookId": "a99cb13f-485c-47ae-89de-bc59d534d14d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "f56ZuZZPW3io9YC0",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI news researcher": {
+      "main": [
+        [
+          {
+            "node": "planning agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "planning agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "planning agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "planning agent": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Topic researcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Editor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Editor",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI news researcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Editor": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Section writer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Section writer": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Topic researcher": {
+      "main": [
+        [
+          {
+            "node": "Section writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "bd0bcb6e-c22a-456f-884c-10d4349e9d1e",
+  "meta": {
+    "templateId": "ready-to-run-ai-workflow-v3",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ff1d97ba846ba307f95293d6e2337f6ead529d1a40ad192fb800db1bc42bf09f"
+  },
+  "id": "WuUuSisi0WFwvLGn",
+  "tags": []
+}
